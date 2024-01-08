@@ -1,20 +1,24 @@
 import { Request, Response } from 'express';
 import logger from '../../utils/logger';
-import { sumCode } from '../../services/Default/default.service';
 import buildMessageError from '../../utils/buildMessageError';
 
-class DefaultController {
-  async setup(request: Request, response: Response) {
+import { Client, Events, GatewayIntentBits } from 'discord.js';
+
+class DiscordController {
+  async bot(request: Request, response: Response) {
     try {
-      const { code } = request.body;
+      const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-      const sum = await sumCode(code);
+      client.once(Events.ClientReady, c => {
+        console.log(`Login realido como: ${c.user.tag}`);
+      });
 
-      return response.json({ sum: sum });
+      client.login(process.env.TOKEN_BOT_DISCORD);
+
     } catch (error: any) {
       logger.error(
         buildMessageError({
-          controller: 'DefaultController.create',
+          controller: 'DiscordController.create',
           body: JSON.stringify(request.body),
           method: JSON.stringify(request.method),
         })
@@ -26,4 +30,4 @@ class DefaultController {
   }
 }
 
-export default new DefaultController();
+export default new DiscordController();
