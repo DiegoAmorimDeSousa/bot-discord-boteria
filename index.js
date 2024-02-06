@@ -1,5 +1,6 @@
 const { Client, Events, GatewayIntentBits, Collection } = require('discord.js');
 const dotenv = require('dotenv');
+const axios = require('axios')
 
 dotenv.config();
 
@@ -10,7 +11,11 @@ const commandsPath = path.join(__dirname, 'commands');
 const commandsFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds]
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+		GatewayIntentBits.MessageContent,
+  ]
 });
 
 client.commands = new Collection();
@@ -49,3 +54,68 @@ client.on(Events.InteractionCreate, async interaction => {
     await interaction.reply('Houve um erro ao executar esse comando!');
   }
 });
+
+let oldIds = [];
+let criouSessao = false;
+let sessionId = '';
+let sessionRedisKey = '';
+
+client.on(Events.MessageCreate, async (messageBot) => {
+  let subscribe;
+  if(!criouSessao) {
+    subscribe = await startNewSession();
+    sessionId = subscribe.sessionId;
+    sessionRedisKey = subscribe.sessionRedisKey;
+  } else if(!messageBot.author.bot){
+    await sendMessage(sessionId, messageBot.content);
+  }
+
+  setInterval(async () => {
+    const sessionMessages = await getMessage(sessionRedisKey);
+    console.log('sessionMessages', sessionMessages)
+
+    if(sessionMessages.arrayMessages.length > 0){
+      sessionMessages.arrayMessages.map(message => {
+        console.log('message', message)
+        if(!oldIds.includes(message._id)){
+          messageBot.reply(message.message);
+          oldIds.push(message._id);
+        }
+      })
+    }
+  }, 4000);
+});
+
+const startNewSession = async (socketId, message) => {
+  criouSessao = true;
+  const response = await axios.post(`http://localhost:3334/webchat/subscribe`, {
+    sessionId: '',
+    botId: '65c15f3cf9841f026520d056',
+    socketId: '',
+    isPreview: true,
+    channel: 'webchat',
+    contactNumber: 'phone',
+    message: '',
+  });
+
+  return response.data;
+};
+
+const getMessage = async (sessionId) => {
+  const messages = await axios.post(`http://localhost:3334/session`, {
+      sessionId: sessionId
+    });
+
+  return messages.data;
+}
+
+const sendMessage = async (sessionId, message) => {
+  const response = await axios.post(`http://localhost:3334/webchat/message`, {
+    sessionId: sessionId,
+    botId: '65c15f3cf9841f026520d056',
+    isPreview: true,
+    channel: 'webchat',
+    message: message,
+  });
+  return response.data;
+};
