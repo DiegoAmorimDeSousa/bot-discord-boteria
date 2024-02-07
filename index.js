@@ -60,19 +60,20 @@ let criouSessao = false;
 let sessionId = '';
 let sessionRedisKey = '';
 
+// id bot: 65c15f3cf9841f026520d056
+
 client.on(Events.MessageCreate, async (messageBot) => {
   let subscribe;
   if(!criouSessao) {
-    subscribe = await startNewSession();
+    subscribe = await startNewSession(process.env.BOT_ID);
     sessionId = subscribe.sessionId;
     sessionRedisKey = subscribe.sessionRedisKey;
   } else if(!messageBot.author.bot){
-    await sendMessage(sessionId, messageBot.content);
+    await sendMessage(sessionId, messageBot.content, process.env.BOT_ID);
   }
 
   setInterval(async () => {
     const sessionMessages = await getMessage(sessionRedisKey);
-    console.log('sessionMessages', sessionMessages)
 
     if(sessionMessages.arrayMessages.length > 0){
       sessionMessages.arrayMessages.map(message => {
@@ -86,11 +87,11 @@ client.on(Events.MessageCreate, async (messageBot) => {
   }, 4000);
 });
 
-const startNewSession = async (socketId, message) => {
+const startNewSession = async (botId) => {
   criouSessao = true;
   const response = await axios.post(`http://localhost:3334/webchat/subscribe`, {
     sessionId: '',
-    botId: '65c15f3cf9841f026520d056',
+    botId: botId,
     socketId: '',
     isPreview: true,
     channel: 'webchat',
@@ -109,10 +110,10 @@ const getMessage = async (sessionId) => {
   return messages.data;
 }
 
-const sendMessage = async (sessionId, message) => {
+const sendMessage = async (sessionId, message, botId) => {
   const response = await axios.post(`http://localhost:3334/webchat/message`, {
     sessionId: sessionId,
-    botId: '65c15f3cf9841f026520d056',
+    botId: botId,
     isPreview: true,
     channel: 'webchat',
     message: message,
