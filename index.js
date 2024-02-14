@@ -77,7 +77,6 @@ client.on(Events.MessageCreate, async (messageBot) => {
 
     if(sessionMessages.arrayMessages.length > 0){
       sessionMessages.arrayMessages.map(message => {
-        console.log('message', message)
         if(!oldIds.includes(message._id)){
           messageBot.reply(message.message);
           oldIds.push(message._id);
@@ -107,7 +106,9 @@ const getMessage = async (sessionId) => {
       sessionId: sessionId
     });
 
-  return messages.data;
+  process.env.INFO_BOT = JSON.stringify(messages.data.bot);
+
+  return messages.data.session;
 }
 
 const sendMessage = async (sessionId, message, botId) => {
