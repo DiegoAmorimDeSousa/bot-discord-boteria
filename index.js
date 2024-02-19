@@ -60,8 +60,6 @@ let criouSessao = false;
 let sessionId = '';
 let sessionRedisKey = '';
 
-// id bot: 65c15f3cf9841f026520d056
-
 client.on(Events.MessageCreate, async (messageBot) => {
   let subscribe;
   if(!criouSessao) {
@@ -88,7 +86,7 @@ client.on(Events.MessageCreate, async (messageBot) => {
 
 const startNewSession = async (botId) => {
   criouSessao = true;
-  const response = await axios.post(`http://localhost:3334/webchat/subscribe`, {
+  const response = await axios.post(`${process.env.ORQUESTRADOR_URL}/webchat/subscribe`, {
     sessionId: '',
     botId: botId,
     socketId: '',
@@ -102,7 +100,7 @@ const startNewSession = async (botId) => {
 };
 
 const getMessage = async (sessionId) => {
-  const messages = await axios.post(`http://localhost:3334/session`, {
+  const messages = await axios.post(`${process.env.ORQUESTRADOR_URL}/session`, {
       sessionId: sessionId
     });
 
@@ -112,7 +110,7 @@ const getMessage = async (sessionId) => {
 }
 
 const sendMessage = async (sessionId, message, botId) => {
-  const response = await axios.post(`http://localhost:3334/webchat/message`, {
+  const response = await axios.post(`${process.env.ORQUESTRADOR_URL}/webchat/message`, {
     sessionId: sessionId,
     botId: botId,
     isPreview: true,
